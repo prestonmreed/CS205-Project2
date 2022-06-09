@@ -52,7 +52,11 @@ int main() {
 }
 
 void search(vector<vector<double> >& data) {
+	cout << "Beginning Search" << endl << endl;
 	set<int> current_set_of_features; 
+	double overall_best_accuracy = 0;
+	set<int> best_feature_set;
+	bool stop_flag = false;
 	for (int i = 1; i < data[0].size(); i++) {
 		cout << "On the " << i << "th level of the search tree" << endl;
 		int feature_to_add_at_this_level;
@@ -65,16 +69,39 @@ void search(vector<vector<double> >& data) {
 				for (set<int>::iterator it = current_set_of_features.begin(); it != current_set_of_features.end(); ++it) {
 					cout << *it << ", ";
 				} 
-				cout << j << "} accuracy is " << accuracy*100 << "%" << endl;
+				cout << j << "} accuracy is " << accuracy << "%" << endl;
 				if (accuracy > best_so_far_accuracy) {
 					best_so_far_accuracy = accuracy;
 					feature_to_add_at_this_level = j;
 				}
 			}
 		}
+		//Quit Search if accuracy fails to improve (takes into account local minima)
+		if (best_so_far_accuracy < overall_best_accuracy) {
+			if (stop_flag) break;
+			stop_flag = true;
+			cout << "(Warning, Accuracy has decreased! Continuing search in case of local maxima)" << endl;
+		}
+		else {
+			stop_flag = false;
+			overall_best_accuracy = best_so_far_accuracy;
+			best_feature_set = current_set_of_features;
+			best_feature_set.insert(feature_to_add_at_this_level);
+		}
+
+		cout << "Feature set {";
+		for (set<int>::iterator it = current_set_of_features.begin(); it != current_set_of_features.end(); ++it) {
+			cout << *it << ", ";
+		}
+		cout << feature_to_add_at_this_level << "} was best, accuracy is " << best_so_far_accuracy << "%" << endl;
 		current_set_of_features.insert(feature_to_add_at_this_level);
-		//cout << "On level " << i << " I added feature " << feature_to_add_at_this_level << " to the current set" << endl;
+		
 	}
+	cout << "Finished Search!! The best feature subset is {";
+	for (set<int>::iterator it = best_feature_set.begin(); it != best_feature_set.end(); ++it) {
+		cout << *it << ", ";
+	}
+	cout << "}, which has an accuracy of " << overall_best_accuracy << "%" << endl; 
 }
 double leave_one_out_cross_validation(vector<vector<double> >& data, set<int>& features, int feature) {
 	//https://stackoverflow.com/questions/2704521/generate-random-double-numbers-in-c
@@ -105,7 +132,7 @@ double leave_one_out_cross_validation(vector<vector<double> >& data, set<int>& f
 		}
 		if (label_object_to_classify == nearest_neighbor_label) number_correctly_classified++;
 	}
-	return double(number_correctly_classified)/double(data.size());
+	return (double(number_correctly_classified)/double(data.size()))*100;
 }
 
 void collectData(string& filename, vector<vector<double> >& data) {
